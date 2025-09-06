@@ -12,7 +12,11 @@ intents = discord.Intents.default()
 client = discord.Client(intents=intents)
 
 # Replace with your channel ID
-CHANNEL_ID = int(os.environ.get("CHANNEL_ID_BTS"))
+channel_id_str = os.environ.get("CHANNEL_ID_BTS")
+if channel_id_str is None:
+    raise ValueError("Environment variable CHANNEL_ID_BTS is not set!")
+
+CHANNEL_ID = int(channel_id_str)
 
 # Flag to control scheduled messages
 scheduled_on = True
