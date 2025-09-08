@@ -19,7 +19,7 @@ if channel_id_str is None:
 CHANNEL_IDS = [int(cid.strip()) for cid in channel_id_str.split(",")]
 
 # Flag to control scheduled messages
-scheduled_on = True
+scheduled_on = False
 
 # --------------------------
 # Scheduled Messages
