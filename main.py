@@ -68,12 +68,12 @@ def arrived_home():
     return "Discord message sent!"
 
 @app.route("/at-school")
-def at-school():
+def at_school():
     send_discord_message("Carl is in class at the University of Alberta!")
     return "Discord message sent!"
     
 @app.route("/at-liquor")
-def at-liquor():
+def at_liquor():
     send_discord_message("Carl is at the liquor store...")
     return "Discord message sent!"
 
