@@ -4,7 +4,8 @@ from flask import Flask
 import asyncio
 from threading import Thread
 import os
-from datetime import time
+from datetime import datetime, time
+from zoneinfo import ZoneInfo
 
 # --------------------------
 # Discord Bot Setup
@@ -19,13 +20,13 @@ if channel_id_str is None:
 
 CHANNEL_IDS = [int(cid.strip()) for cid in channel_id_str.split(",")]
 
-# Flags for features
-scheduled_on = False    # Controls original scheduled meme messages
-daily_check_on = True   # Controls new daily home check
-at_home = False         # Tracks whether Carl is home
+# Flags to control functionality
+scheduled_on = False  # Meme messages paused by default
+daily_check_on = True  # Daily home check enabled by default
+at_home = True  # Tracks whether Carl is currently home
 
 # --------------------------
-# Scheduled Messages (Original)
+# Scheduled Meme Messages
 # --------------------------
 @tasks.loop(seconds=60)
 async def send_message():
@@ -39,16 +40,31 @@ async def send_message():
                 )
 
 # --------------------------
-# Daily Home Check (NEW)
+# Daily Home Check (10 PM local)
 # --------------------------
-@tasks.loop(time=time(22, 0, 0))  # Runs every day at 10 PM
+@tasks.loop(time=time(22, 0, 0, tzinfo=ZoneInfo("America/Edmonton")))
 async def daily_home_check():
     if daily_check_on:
-        if not at_home:  # If Carl is not home at this time
+        if not at_home:
             for channel_id in CHANNEL_IDS:
                 channel = client.get_channel(channel_id)
                 if channel:
-                    await channel.send("It's 10:00 pm and Carl is still not home... Maybe check on him?")
+                    await channel.send("Carl is NOT home by 10 PM!")
+
+@daily_home_check.before_loop
+async def before_daily_home_check():
+    await client.wait_until_ready()
+
+# --------------------------
+# Discord Events
+# --------------------------
+@client.event
+async def on_ready():
+    print(f"Bot is running! Logged in as {client.user}")
+    if not send_message.is_running():
+        send_message.start()
+    if not daily_home_check.is_running():
+        daily_home_check.start()
 
 # --------------------------
 # Flask Server Setup
@@ -66,14 +82,6 @@ def send_discord_message(text):
 def home():
     return "Bot is running!"
 
-# ---- Location Routes (NEW) ----
-@app.route("/arrived-home")
-def arrived_home():
-    global at_home
-    at_home = True
-    send_discord_message("Carl has arrived home!")
-    return "Discord message sent!"
-
 @app.route("/left-home")
 def left_home():
     global at_home
@@ -81,17 +89,23 @@ def left_home():
     send_discord_message("Carl has left home!")
     return "Discord message sent!"
 
+@app.route("/arrived-home")
+def arrived_home():
+    global at_home
+    at_home = True
+    send_discord_message("Carl has arrived home!")
+    return "Discord message sent!"
+
 @app.route("/at-school")
 def at_school():
     send_discord_message("Carl is in class at the University of Alberta!")
     return "Discord message sent!"
-
+    
 @app.route("/at-liquor")
 def at_liquor():
     send_discord_message("Carl is at the liquor store...")
     return "Discord message sent!"
 
-# ---- Control Routes (Original Scheduled Messages) ----
 @app.route("/pause-scheduled")
 def pause_scheduled():
     global scheduled_on
@@ -106,30 +120,21 @@ def resume_scheduled():
 
 @app.route("/status")
 def status():
-    return f"Scheduled messages are {'ON' if scheduled_on else 'OFF'}."
+    return f"Scheduled messages are {'ON' if scheduled_on else 'OFF'}. Daily check is {'ON' if daily_check_on else 'OFF'}. Currently {'HOME' if at_home else 'AWAY'}."
 
-# ---- Control Routes (NEW Daily Home Check) ----
-@app.route("/pause-daily-check")
-def pause_daily_check():
+@app.route("/pause-daily")
+def pause_daily():
     global daily_check_on
     daily_check_on = False
-    return "Daily 10 PM home check paused!"
+    return "Daily home check paused!"
 
-@app.route("/resume-daily-check")
-def resume_daily_check():
+@app.route("/resume-daily")
+def resume_daily():
     global daily_check_on
     daily_check_on = True
-    return "Daily 10 PM home check resumed!"
+    return "Daily home check resumed!"
 
-@app.route("/daily-check-status")
-def daily_check_status():
-    return f"Daily home check is {'ON' if daily_check_on else 'OFF'}."
-
-# --------------------------
-# Flask Runner
-# --------------------------
 def run_flask():
-    # Optimized for hosting
     app.run(host="0.0.0.0", port=8080)
 
 # Run Flask in a separate thread
@@ -138,13 +143,5 @@ Thread(target=run_flask).start()
 # --------------------------
 # Run Discord Bot
 # --------------------------
-@client.event
-async def on_ready():
-    print(f"Bot is running! Logged in as {client.user}")
-    if not send_message.is_running():
-        send_message.start()
-    if not daily_home_check.is_running():
-        daily_home_check.start()
-
 BOT_TOKEN = os.environ.get("BOT_TOKEN")
 client.run(BOT_TOKEN)
