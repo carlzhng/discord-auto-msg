@@ -49,7 +49,7 @@ async def daily_home_check():
             for channel_id in CHANNEL_IDS:
                 channel = client.get_channel(channel_id)
                 if channel:
-                    await channel.send("Carl is NOT home by 10 PM!")
+                    await channel.send("It's 10:00 pm and Carl is still not home... maybe check on him?")
 
 @daily_home_check.before_loop
 async def before_daily_home_check():
