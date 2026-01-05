@@ -28,16 +28,13 @@ at_home = True  # Tracks whether Carl is currently home
 # --------------------------
 # Scheduled Meme Messages
 # --------------------------
-@tasks.loop(seconds=60)
+@tasks.loop(time=time(18,7,0, tzinfo=ZoneInfo("America/Edmonton")))
 async def send_message():
     if scheduled_on:
         for channel_id in CHANNEL_IDS:
             channel = client.get_channel(channel_id)
             if channel:
-                await channel.send(
-                    "crazy? I was crazy once. They locked me in a room. "
-                    "A rubber room. A rubber room with rats, and the rats made me crazy."
-                )
+                await channel.send("ITS 6:07 PM!!!!")
 
 # --------------------------
 # Daily Home Check (10 PM local)
