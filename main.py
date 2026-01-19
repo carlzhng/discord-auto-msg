@@ -34,7 +34,7 @@ async def send_message():
         for channel_id in CHANNEL_IDS:
             channel = client.get_channel(channel_id)
             if channel:
-                await channel.send("ITS 6:07 PM!!!!")
+                await channel.send("It's 6:07 pm!")
 
 # --------------------------
 # Daily Home Check (10 PM local)
@@ -95,7 +95,7 @@ def arrived_home():
 
 @app.route("/at-school")
 def at_school():
-    send_discord_message("Carl is in class at the University of Alberta!")
+    send_discord_message("Carl is in class at uofa!")
     return "Discord message sent!"
     
 @app.route("/at-liquor")
